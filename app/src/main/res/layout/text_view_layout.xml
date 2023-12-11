@@ -1,0 +1,10 @@
+<!-- res/layout/text_view_layout.xml -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Reproducir de nuevo"
+    android:textSize="10sp"
+    android:textColor="#FFFFFF"
+    android:background="#000000"
+    android:padding="16dp"
+    android:gravity="center" />

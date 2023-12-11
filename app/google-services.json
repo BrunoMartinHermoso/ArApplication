@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "261710689839",
+    "project_id": "arapplication-406111",
+    "storage_bucket": "arapplication-406111.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:261710689839:android:7479f80f32a2b10c89b8da",
+        "android_client_info": {
+          "package_name": "com.example.arapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoFUEwucr8uUGtL1fxP2CY_gdDkEh9-sU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
