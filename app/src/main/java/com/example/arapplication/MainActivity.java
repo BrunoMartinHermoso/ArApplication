@@ -8,6 +8,9 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -49,32 +52,26 @@ public class MainActivity extends AppCompatActivity {
     private ExternalTexture texture;
     private MediaPlayer mediaPlayer = new MediaPlayer();
 
-    private MediaPlayer video1 ;
-    private MediaPlayer video2  ;
+    private Button button;
+
     private ArFragment arFragment;
     private Scene scene;
     private ModelRenderable renderable;
 
-    String currentImageName = "";
+
 
     private AnchorNode anchorNode;
     private boolean isVideoPlaying = false;
-    private boolean isVideoPlaying1 = false;
-    private boolean isVideoPlaying2 = false;
-    private boolean isImageDetected = false;
-    private boolean imageInFocus = false;
 
     private AugmentedImage activeAugmentedImage;
 
-    private AnchorNode anchorNodeText; // Variable para el nodo de ancla del texto
-    private ViewRenderable textRenderable; // Variable para el renderizado del texto
 
     private HashSet<String> processedImages = new HashSet<>();
-    private HashMap<String, MediaPlayer> videoPlayers = new HashMap<>();
+
     Session session;
 
     Config config;
-    AugmentedImage augmentedImage;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,8 +82,8 @@ public class MainActivity extends AppCompatActivity {
         arFragment.getPlaneDiscoveryController().hide();
         arFragment.getPlaneDiscoveryController().setInstructionView(null);
         scene = arFragment.getArSceneView().getScene();
-        video1  = MediaPlayer.create(this,  R.raw.video);
-        video2 = MediaPlayer.create(this,  R.raw.video2);
+        button = findViewById(R.id.button);
+        button.setVisibility(View.GONE);
         scene.addOnUpdateListener(this::onUpdate);
 
 
@@ -105,6 +102,29 @@ public class MainActivity extends AppCompatActivity {
         aid.addImage("image", image);
         Bitmap image2 = BitmapFactory.decodeResource(getResources(), R.drawable.image2);
         aid.addImage("image2", image2);
+        /*  Bitmap image3 = BitmapFactory.decodeResource(getResources(), R.drawable.image3);
+        aid.addImage("image3", image3);
+        Bitmap image4 = BitmapFactory.decodeResource(getResources(), R.drawable.image4);
+        aid.addImage("image4", image4);
+        Bitmap image5 = BitmapFactory.decodeResource(getResources(), R.drawable.image5);
+        aid.addImage("image5", image5);
+        Bitmap image6 = BitmapFactory.decodeResource(getResources(), R.drawable.image6);
+        aid.addImage("image6", image6);
+        Bitmap image7 = BitmapFactory.decodeResource(getResources(), R.drawable.image7);
+        aid.addImage("image7", image7);
+        Bitmap image8 = BitmapFactory.decodeResource(getResources(), R.drawable.image8);
+        aid.addImage("image8", image8);
+        Bitmap image9 = BitmapFactory.decodeResource(getResources(), R.drawable.image9);
+        aid.addImage("image9", image9);
+        Bitmap image10 = BitmapFactory.decodeResource(getResources(), R.drawable.image10);
+        aid.addImage("image10", image10);
+        Bitmap image11 = BitmapFactory.decodeResource(getResources(), R.drawable.image11);
+        aid.addImage("image11", image11);
+        Bitmap image12 = BitmapFactory.decodeResource(getResources(), R.drawable.image12);
+
+        aid.addImage("image12", image12);
+             */
+
         config.setAugmentedImageDatabase(aid);
 
         arFragment.getArSceneView().setupSession(session);
@@ -118,9 +138,21 @@ public class MainActivity extends AppCompatActivity {
                     modelRenderable.getMaterial().setFloat4("keyColor", new Color(0.01843f, 1f, 0.098f));
                     renderable = modelRenderable;
                 });
+        arFragment.getArSceneView().setOnTouchListener((view, motionEvent) -> {
+            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                if (mediaPlayer != null) {
+                    if (mediaPlayer.isPlaying()) {
+                        mediaPlayer.pause();
+
+                    } else {
+                        mediaPlayer.start();
+                    }
+                }
+            }
+           return true;
+        });
     }
-    private String currentImageAnchor = "";
-    private MediaPlayer currentVideoPlayer = null;
+
 
     private boolean foundImage = false;
     private boolean isProcessingImage = false;
@@ -137,10 +169,10 @@ public class MainActivity extends AppCompatActivity {
         boolean hasUpdatedTrackables = !frame.getUpdatedTrackables(AugmentedImage.class).isEmpty();
 
         if (hasUpdatedTrackables && !foundImage) {
-            Log.d("hola","");
+
             foundImage = true;
         } else if (!hasUpdatedTrackables && foundImage) {
-            Log.d("adios","adios");
+
             foundImage = false;
         }
 
@@ -161,21 +193,20 @@ public class MainActivity extends AppCompatActivity {
 
         if (!updatedAugmentedImages.isEmpty()) {
             newDetectedImage = fullTrackingImages.iterator().next();
-            Log.d("imagennueva", newDetectedImage.getName());
-            // Verifica si la imagen detectada es diferente a la que se está reproduciendo actualmente
+
             if (activeAugmentedImage == null || !activeAugmentedImage.equals(newDetectedImage)) {
                 try {
 
-                    // Reproduce el video solo si no se está reproduciendo actualmente
+
                     if (!isVideoPlaying) {
                         arFragment.getArSceneView().getPlaneRenderer().setEnabled(false);
-                        isImageDetected = true;
+
                         mediaPlayer = MediaPlayer.create(this, (newDetectedImage.getName().equals("image")) ? R.raw.video : R.raw.video2);
                         mediaPlayer.setSurface(texture.getSurface());
 
                         playVideo(newDetectedImage.createAnchor(newDetectedImage.getCenterPose()), newDetectedImage.getExtentX(), newDetectedImage.getExtentZ());
                         processedImages.add(newDetectedImage.getName());
-                        Log.d("llego","");
+                        button.setVisibility(View.VISIBLE);
                         isVideoPlaying = true;
                         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                             @Override
@@ -183,24 +214,39 @@ public class MainActivity extends AppCompatActivity {
                                 isVideoPlaying = false;
                                 stopAndReleaseVideo();
                                 configureSessionWithAugmentedImagesInBackground();
-
+                                button.setVisibility(View.GONE);
 
                             }
                         });
                         activeAugmentedImage = newDetectedImage;
 
-                        Log.d("imagenahora", activeAugmentedImage.getName());
+
                     }
                 } catch (IOException e) {
                     Log.e(TAG, "Could not play video [" + newDetectedImage.getName() + "]", e);
                 }
             }
         }else {
-            // Si no hay imágenes detectadas, detén la reproducción del video
+
 
             activeAugmentedImage = null;
         }
-
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                configureSessionWithAugmentedImagesInBackground();
+                mediaPlayer.pause();
+                mediaPlayer.stop();
+                mediaPlayer.reset();
+                button.setVisibility(View.GONE);
+                isVideoPlaying = false;
+                if (anchorNode != null) {
+                    scene.removeChild(anchorNode);
+                    anchorNode.getAnchor().detach();
+                    anchorNode.setParent(null);
+                    anchorNode = null;
+                }
+            }
+        });
     }
     private void configureSessionWithAugmentedImagesInBackground() {
         new Thread(() -> {
@@ -209,44 +255,35 @@ public class MainActivity extends AppCompatActivity {
             aid.addImage("image", image);
             Bitmap image2 = BitmapFactory.decodeResource(getResources(), R.drawable.image2);
             aid.addImage("image2", image2);
+             /*  Bitmap image3 = BitmapFactory.decodeResource(getResources(), R.drawable.image3);
+        aid.addImage("image3", image3);
+        Bitmap image4 = BitmapFactory.decodeResource(getResources(), R.drawable.image4);
+        aid.addImage("image4", image4);
+        Bitmap image5 = BitmapFactory.decodeResource(getResources(), R.drawable.image5);
+        aid.addImage("image5", image5);
+        Bitmap image6 = BitmapFactory.decodeResource(getResources(), R.drawable.image6);
+        aid.addImage("image6", image6);
+        Bitmap image7 = BitmapFactory.decodeResource(getResources(), R.drawable.image7);
+        aid.addImage("image7", image7);
+        Bitmap image8 = BitmapFactory.decodeResource(getResources(), R.drawable.image8);
+        aid.addImage("image8", image8);
+        Bitmap image9 = BitmapFactory.decodeResource(getResources(), R.drawable.image9);
+        aid.addImage("image9", image9);
+        Bitmap image10 = BitmapFactory.decodeResource(getResources(), R.drawable.image10);
+        aid.addImage("image10", image10);
+        Bitmap image11 = BitmapFactory.decodeResource(getResources(), R.drawable.image11);
+        aid.addImage("image11", image11);
+        Bitmap image12 = BitmapFactory.decodeResource(getResources(), R.drawable.image12);
+
+        aid.addImage("image12", image12);
+             */
+
             config.setAugmentedImageDatabase(aid);
-
-
             session.configure(config);
             runOnUiThread(() -> session.configure(config));
         }).start();
     }
 
-    private void addTextToScene() {
-        Anchor anchor = anchorNode.getAnchor(); // Obtener el ancla actual
-
-        if (anchor != null && textRenderable != null) {
-            AnchorNode textAnchorNode = new AnchorNode(anchor);
-            textAnchorNode.setParent(arFragment.getArSceneView().getScene());
-
-            Node textNode = new Node();
-            textNode.setRenderable(textRenderable);
-            textNode.setParent(textAnchorNode);
-
-            // Posición del texto (ajusta según sea necesario)
-            textNode.setLocalPosition(new Vector3(0.3f, 0.1f, -0.5f));
-
-            scene.addChild(textNode);
-            ;
-            // Manejo del evento de toque para reproducir el video nuevamente
-            textNode.setOnTapListener((hitTestResult, motionEvent) -> {
-                replayVideo();
-            });
-        }
-    }
-
-    // Método para reproducir el video nuevamente al tocar el texto
-    private void replayVideo() {
-
-        mediaPlayer.start();
-        // Quitar el texto al reproducir el video nuevamente (puedes ajustar según tu estructura de anclas)
-
-    }
 
     private void stopAndReleaseVideo() {
         if (mediaPlayer != null) {
@@ -264,30 +301,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-    private void pauseArVideo() {
-        anchorNode.setRenderable(null);
-        mediaPlayer.pause();
-    }
-    private void resumeArVideo() {
-        mediaPlayer.start();
-        anchorNode.setRenderable(renderable);
-    }
-
-    private void playbackArVideo(AugmentedImage image) throws IOException {
-
-
-        mediaPlayer = MediaPlayer.create(this, (image.getName().equals("image")) ? R.raw.video : R.raw.video2);
-
-
-        mediaPlayer.start();
-
-
-    }
-
-    private boolean isValidImage(String imageName) {
-        return imageName != null && (imageName.equals("image") || imageName.equals("image2"));
-    }
-
     private void playVideo(Anchor anchor, float extentX, float extentZ)  throws IOException {
         mediaPlayer.start();
 
@@ -301,7 +314,22 @@ public class MainActivity extends AppCompatActivity {
             texture.getSurfaceTexture().setOnFrameAvailableListener(null);
         });
     }
-
+    @Override
+    public void onPause() {
+        super.onPause();
+        configureSessionWithAugmentedImagesInBackground();
+        mediaPlayer.pause();
+        mediaPlayer.stop();
+        mediaPlayer.reset();
+        button.setVisibility(View.GONE);
+        isVideoPlaying = false;
+        if (anchorNode != null) {
+            scene.removeChild(anchorNode);
+            anchorNode.getAnchor().detach();
+            anchorNode.setParent(null);
+            anchorNode = null;
+        }
+    }
 
 }
 
